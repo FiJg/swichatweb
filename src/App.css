@@ -1,0 +1,38 @@
+body {
+	background-color: #201f22;
+}
+
+.App {
+	color: white;
+	display: flex;
+	justify-content: center;
+	text-align: center;
+}
+
+.MyFont {
+	font-family: 'Play', sans-serif;
+}
+
+.MessageInput > div {
+	overflow: hidden;
+}
+
+
+/* moje */
+.gradient-background {
+	animation: gradient-animation 24s ease infinite;
+	background: linear-gradient(60deg, #66666f, #837b8a, rgba(165, 152, 171, 0.13));
+	background-size: 240% 240%;
+}
+
+@keyframes gradient-animation {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
