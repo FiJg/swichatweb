@@ -39,6 +39,12 @@ const ChatWindow = (props) => {
 	async function send(e) {
 		e.preventDefault()
 		console.log("Send function called!");
+
+		if (message.trim().length === 0 && !file) {
+			alert('You cannot send an empty message unless a file is attached.');
+			return;
+		}
+
 		if (message.length > 250) {
 			alert('Message cannot be longer than 250 characters!')
 			return;
@@ -66,7 +72,7 @@ const ChatWindow = (props) => {
 
 
 		props.sendMessage({
-			content: message,
+			content: message.trim(),
 			fileUrl,
 			fileName,
 			fileType,
@@ -187,6 +193,7 @@ const ChatWindow = (props) => {
 										<TextInput
 											multiline
 											placeholder="Napíšte správu..."
+											value={message}
 											onChange={e => {
 												setMessage(e.target.value)
 											}}
