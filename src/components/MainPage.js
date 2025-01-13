@@ -23,35 +23,44 @@ const Menu = (props) => {
 		if (newChatId === undefined) {
 			props.unsetUserToken()
 		}
-		
+
 		await setActiveChat(
 			await axios.get(LOCALHOST_URL + '/api/chatroom/' + newChatId)
-			           .then(result => {
-				           return result.data
-			           })
-			           .catch(error => {
-				           console.error(error)
-			           }),
+				.then(result => {
+					return result.data
+				})
+				.catch(error => {
+					console.error(error)
+				}),
 		)
 	}
-	
+
 	useLayoutEffect(() => {
 		return () => {
 			stompClient.disconnect()
 		}
 	}, [])
-	
+
 	useEffect(() => {
 		let sock = new SockJS(LOCALHOST_URL + '/ws')
 		stompClient = over(sock)
 		stompClient.connect({}, onConnected, onError)
 	}, [])
-	
+
 	useEffect(() => {
 		checkReceivedMessages()
 	})
-	
+
 	useEffect(() => setReload(false), [reload])
+
+	const handleNewMessage = (newMessage) => {
+		setPrivateChats((prevChats) => {
+			const updatedChats = new Map(prevChats);
+			const chatMessages = updatedChats.get(activeChat.id) || [];
+			updatedChats.set(activeChat.id, [...chatMessages, newMessage]);
+			return updatedChats;
+		});
+	};
 	
 	function onConnected() {
 		stompClient.subscribe('/chatroom/public', onMessageReceived)
@@ -80,6 +89,7 @@ const Menu = (props) => {
 	function onPrivateMessageReceived(payload) {
 	}
 
+
 	function onMessageReceived(payload) {
 		const url = LOCALHOST_URL + '/api/queue';
 		const params = new URLSearchParams([['username', props.user.username]]);
@@ -99,7 +109,6 @@ const Menu = (props) => {
 			})
 			.catch(error => console.error(error));
 	}
-	
 	function onPublicMessageReceived(payload) {
 		const url = LOCALHOST_URL + '/api/queue'
 		const params = new URLSearchParams([['username', props.user.username]])
@@ -118,7 +127,6 @@ const Menu = (props) => {
 
 
 
-
 	function sendMessage(message) {
 		if (activeChat.isPublic) {
 			sendStompMessage(message, '/app/message')
@@ -127,9 +135,9 @@ const Menu = (props) => {
 		} else {
 			sendStompMessage(message, '/app/private-message')
 		}
-		
+
 	}
-	
+
 	function sendStompMessage(message, destination) {
 		if (stompClient) {
 			let payloadMsg = {
@@ -138,13 +146,15 @@ const Menu = (props) => {
 				content: message,
 				date: new Date().getTime(),
 			}
-			
+
 			stompClient.send(destination, {}, JSON.stringify(payloadMsg))
-			
+
 			setReload(true)
 		}
 	}
-	
+
+
+
 	function sendPublicMessage(message) {
 		if (stompClient) {
 			let payloadMsg = {
@@ -180,14 +190,24 @@ const Menu = (props) => {
 			stompClient.send('/app/private-message', {}, JSON.stringify(payloadMsg))
 		}
 	}
-	
+
 	return (
 		<>
-			<ChatSelection activeChat={activeChat} setActiveChat={setActiveChat} handleChatChange={handleChatChange}
-			               isSmallRes={isSmallRes} user={props.user} privateChats={privateChats}
-			               setPrivateChats={setPrivateChats} isLoading={isLoading} setIsLoading={setIsLoading}/>
-			<ChatWindow activeChat={activeChat} isSmallRes={isSmallRes} user={props.user} privateChats={privateChats}
-			            isLoading={isLoading} sendMessage={sendMessage}/>
+			<ChatSelection activeChat={activeChat}
+						   setActiveChat={setActiveChat}
+						   handleChatChange={handleChatChange}
+						   isSmallRes={isSmallRes}
+						   user={props.user}
+						   privateChats={privateChats}
+						   setPrivateChats={setPrivateChats}
+						   isLoading={isLoading}
+						   setIsLoading={setIsLoading}/>
+			<ChatWindow activeChat={activeChat}
+						isSmallRes={isSmallRes}
+						user={props.user}
+						privateChats={privateChats}
+						isLoading={isLoading}
+						sendMessage={sendMessage}/>
 		</>
 	)
 }

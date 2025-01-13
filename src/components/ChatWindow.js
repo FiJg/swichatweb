@@ -33,26 +33,77 @@ const SendButton = styled(IconButton)({
 
 const ChatWindow = (props) => {
 	const [message, setMessage] = useState('')
-
+	const [file, setFile] = useState(null); // New state for file
 	const formRef = useRef(null)
 
-	function send(e) {
+	async function send(e) {
 		e.preventDefault()
 		console.log("Send function called!");
-		if(message.length > 250) {
+		if (message.length > 250) {
 			alert('Message cannot be longer than 250 characters!')
 			return;
 		}
 
-		props.sendMessage(message)
+		let fileUrl = null;
+		let fileName = null;
+		let fileType = null;
+
+		if (file) {
+			const formData = new FormData();
+			formData.append('file', file);
+
+			try {
+				const response = await axios.post(`${LOCALHOST_URL}/api/messages/upload`, formData);
+				fileUrl = response.data.fileUrl;
+				fileName = file.name;
+				fileType = file.type;
+			} catch (error) {
+				console.error('File upload failed:', error);
+				alert('Failed to upload the file.');
+				return;
+			}
+		}
+
+
+		props.sendMessage({
+			content: message,
+			fileUrl,
+			fileName,
+			fileType,
+		});
+
 		formRef.current.reset()
 		setMessage('')
+		setFile(null);
 	}
 
 	function onKeyDown(e) {
 		if (e.keyCode === 13 && !e.shiftKey) {
 			send(e)
 		}
+	}
+
+	function formatDateToLocal(timestamp) {
+		if (!timestamp) return "Not Retrieved";
+
+		// Ensure timestamp is a valid number and in milliseconds
+		if (typeof timestamp === "string" || typeof timestamp === "number") {
+			const timestampMs = typeof timestamp === "number" && timestamp < 1e12 ? timestamp * 1000 : timestamp;
+			const date = new Date(timestampMs);
+
+			// Check if date is valid
+			if (!isNaN(date.getTime())) {
+				return date.toLocaleString(undefined, {
+					year: 'numeric',
+					month: 'numeric',
+					day: 'numeric',
+					hour: 'numeric',
+					minute: 'numeric',
+				});
+			}
+		}
+
+		return "Invalid Date";
 	}
 
 	function formatDate(dateTime) {
@@ -85,8 +136,8 @@ const ChatWindow = (props) => {
 		/// axios.put(LOCALHOST_URL+ '/api/chatroom/addusertogroup', {
 		//axios.post(LOCALHOST_URL+ '/api/chatroom/assignUserToRoom', {
 		axios.post(LOCALHOST_URL+ '/api/chatroom/${chatroomID}/assign', {
-				username:users
-			})
+			username:users
+		})
 			.then((result) => fetchChatRooms(e))
 			.catch((e) => console.error(e))
 	}
@@ -123,6 +174,11 @@ const ChatWindow = (props) => {
 						<Box sx={{position: 'absolute', bottom: '0', width: '80%'}}>
 							<form onSubmit={send} ref={formRef}>
 								<div className="MessageInput">
+									<input
+										type="file"
+										onChange={(e) => setFile(e.target.files[0])} // Update file state
+										style={{ marginBottom: '10px', display: 'block' }}
+									/>
 									<SendButton type="submit">
 										<SendRounded color="secondary"/>
 									</SendButton>
@@ -173,7 +229,7 @@ const ChatWindow = (props) => {
 
 							{[...(props.privateChats.get(props.activeChat.id) || [])].map((msg, index) => (
 								<Box key={`${msg.id}-${index}`} sx={{ paddingBottom: '10px', width: '100%', overflow: 'auto' }}>
-									{msg.user && msg.user.id === props.user.id ? (
+									{msg.username === props.user.username ? (
 										<div>
 											<div style={{
 												padding: '10px',
@@ -182,9 +238,9 @@ const ChatWindow = (props) => {
 												textAlign: 'left',
 												fontSize: '11px',
 											}}>
-                        <span style={{ fontSize: '13px' }}>
-                            <b>{msg.user.username || 'Unknown'}</b>
-                        </span> {formatDate(msg.sendTime)}
+											<span style={{ fontSize: '13px' }}>
+												<b>{msg.username || 'Unknown'}</b>
+											</span> {formatDate(msg.sendTime)}
 											</div>
 											<Box sx={{
 												padding: '10px',
@@ -195,7 +251,38 @@ const ChatWindow = (props) => {
 												borderRadius: '15px',
 												maxWidth: '75%',
 											}}>
-												{msg.content}
+												{/* Check if a file is attached */}
+												{msg.fileUrl ? (
+														msg.fileType && msg.fileType.startsWith('image/') ? (
+															// Render image if it's an image file
+															<img
+																src={msg.fileUrl}
+																alt={msg.fileName || 'Image'}
+																style={{ maxWidth: '100%', borderRadius: '10px' }}
+															/>
+														) : (
+															// Provide a download link for non-image files
+															<a
+																href={msg.fileUrl}
+																target="_blank"
+																rel="noopener noreferrer"
+																style={{ color: 'white', textDecoration: 'underline' }}
+															>
+																{msg.fileName || 'Download File'}
+															</a>
+														)
+													) :
+													(
+														// Render plain text content
+
+														msg.content
+													)}
+
+												{/* Add timestamps */}
+												<div style={{ marginTop: '5px', fontSize: '11px', color: '#cccccc' }}>
+													<div>Added to Queue: {msg.addedToQueueTimestamp && formatDateToLocal(msg.addedToQueueTimestamp)}</div>
+													<div>Retrieved from Queue: {msg.retrievedFromQueueTimestamp && formatDateToLocal(msg.retrievedFromQueueTimestamp)}</div>
+												</div>
 											</Box>
 										</div>
 									) : (
@@ -208,7 +295,7 @@ const ChatWindow = (props) => {
 												fontSize: '11px',
 											}}>
                         <span style={{ fontSize: '13px' }}>
-                            <b>{msg.user?.username || 'Unknown'}</b>
+                            <b>{msg.username || 'Unknown'}</b>
                         </span> {formatDate(msg.sendTime)}
 											</div>
 											<Box sx={{
@@ -220,7 +307,30 @@ const ChatWindow = (props) => {
 												borderRadius: '15px',
 												maxWidth: '75%',
 											}}>
-												{msg.content}
+												{/* Check if a file is attached */}
+												{msg.fileUrl ? (
+													msg.fileType && msg.fileType.startsWith('image/') ? (
+														// Render image if it's an image file
+														<img
+															src={msg.fileUrl}
+															alt={msg.fileName || 'Image'}
+															style={{ maxWidth: '100%', borderRadius: '10px' }}
+														/>
+													) : (
+														// Provide a download link for non-image files
+														<a
+															href={msg.fileUrl}
+															target="_blank"
+															rel="noopener noreferrer"
+															style={{ color: 'white', textDecoration: 'underline' }}
+														>
+															{msg.fileName || 'Download File'}
+														</a>
+													)
+												) : (
+													// Render plain text content
+													msg.content
+												)}
 											</Box>
 										</div>
 									)}
@@ -228,8 +338,8 @@ const ChatWindow = (props) => {
 							))}
 						</Box>
 
-							<Box sx={{paddingBottom: '10px', width: '100%', overflow: 'auto'}}>
-							</Box>
+						<Box sx={{paddingBottom: '10px', width: '100%', overflow: 'auto'}}>
+						</Box>
 					</Box>
 				</Box>
 			)}
