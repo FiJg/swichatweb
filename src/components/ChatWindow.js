@@ -34,7 +34,26 @@ const SendButton = styled(IconButton)({
 const ChatWindow = (props) => {
 	const [message, setMessage] = useState('')
 	const [file, setFile] = useState(null); // New state for file
+
+	const [failedAvatars, setFailedAvatars] = useState(new Set()); // Track failed avatar requests
+
+
+	const getAvatarUrl = (username) => {
+		if (failedAvatars.has(username)) {
+			// Use placeholder for users whose avatars failed to load
+			return '/placeholder-avatar.png';
+		}
+		return `${LOCALHOST_URL}/uploads/avatars/${username}.png`;
+	};
+
+	const handleAvatarError = (username) => {
+		setFailedAvatars((prev) => new Set([...prev, username]));
+	};
+
+
+
 	const formRef = useRef(null)
+
 
 	async function send(e) {
 		e.preventDefault()
@@ -128,32 +147,42 @@ const ChatWindow = (props) => {
 
 	function addUsersToGroupChat(e) {
 
-		let users = prompt('Enter the usernames of the users you want to add to the group chat, separated by commas,')
-		if(users.length === 0) {
-			alert('Pridajte aspon jedneho uzivatela')
+		let user = prompt('Enter the username of the user you want to add to the group chat:');
+		if (!user || user.trim().length === 0) {
+			alert('Please enter a valid username.');
 			return;
 		}
 
-		users = users.split(/\s*,\s*/)
-		const { chatId } = props.activeChat.id;
+
+		const chatroomID = props.activeChat.id;
+
 		//var urlString = LOCALHOST_URL + '/api/chatroom/'+{$chatId}+'/chatusers/'+{$users};
 		//urlString
 		//axios.put(LOCALHOST_URL+ '/api/chatroom/${chatId}/chatusders/${users}', {
 		/// axios.put(LOCALHOST_URL+ '/api/chatroom/addusertogroup', {
 		//axios.post(LOCALHOST_URL+ '/api/chatroom/assignUserToRoom', {
-		axios.post(LOCALHOST_URL+ '/api/chatroom/${chatroomID}/assign', {
-			username:users
+
+		axios.post(`${LOCALHOST_URL}/api/chatroom/assign/${chatroomID}`, {
+			userName: user.trim(), // Send a single username
+			reqUserId: props.user.id, // Requesting user's ID
+			roomId: chatroomID,
 		})
-			.then((result) => fetchChatRooms(e))
-			.catch((e) => console.error(e))
+			.then(() => {
+				alert(`User "${user.trim()}" successfully added to the group chat!`);
+				fetchChatRooms(e); // Refresh chatrooms after adding
+			})
+			.catch((err) => {
+				console.error('Failed to add user to group chat:', err);
+				alert(`Failed to add user "${user.trim()}" to the group chat. Please try again.`);
+			});
 	}
 
 	useEffect(() => {
 		if (props.activeChat && props.privateChats.has(props.activeChat.id)) {
 			scrollToBottom();
 		}
+		scrollToBottom();
 	}, [props.activeChat, props.privateChats]);
-
 
 	//send button
 
@@ -164,12 +193,9 @@ const ChatWindow = (props) => {
 			) : (
 				<Box sx={{
 					position: 'absolute', padding: '10px',
-					...(props.isSmallRes === true && {
-						left: '80px',
-						width: 'calc(100% - 110px)',
+					...(props.isSmallRes === true && {left: '80px', width: 'calc(100% - 110px)',
 					}),
-					...(props.isSmallRes === false && {
-						left: '320px',
+					...(props.isSmallRes === false && {left: '320px',
 						width: 'calc(100% - 340px)',
 					}),
 					textAlign: 'center',
@@ -231,7 +257,8 @@ const ChatWindow = (props) => {
 								width: 0,
 							},
 							scrollBehavior: 'smooth',
-						}}>
+//dis
+							}}>
 
 
 							{[...(props.privateChats.get(props.activeChat.id) || [])].map((msg, index) => (
@@ -247,7 +274,7 @@ const ChatWindow = (props) => {
 											}}>
 											<span style={{ fontSize: '13px' }}>
 												<b>{msg.username || 'Unknown'}</b>
-											</span> {formatDate(msg.sendTime)}
+											</span> {' '} {formatDate(msg.sendTime)}
 											</div>
 											<Box sx={{
 												padding: '10px',
@@ -287,10 +314,22 @@ const ChatWindow = (props) => {
 
 												{/* Add timestamps */}
 												<div style={{ marginTop: '5px', fontSize: '11px', color: '#cccccc' }}>
-													<div>Added to Queue: {msg.addedToQueueTimestamp && formatDateToLocal(msg.addedToQueueTimestamp)}</div>
-													<div>Retrieved from Queue: {msg.retrievedFromQueueTimestamp && formatDateToLocal(msg.retrievedFromQueueTimestamp)}</div>
+													<div>
+														Added to Queue:{' '}
+														{msg.addedToQueueTimestamp && formatDateToLocal(msg.addedToQueueTimestamp)}
+													</div>
+													<div>
+														Retrieved from Queue:{' '}
+														{msg.retrievedFromQueueTimestamp && formatDateToLocal(msg.retrievedFromQueueTimestamp)}
+													</div>
 												</div>
 											</Box>
+											<img
+												src={getAvatarUrl(msg.username)}
+												alt={msg.username}
+												onError={() => handleAvatarError(msg.username)} // Use the state to track failed avatars
+												style={{ width: '40px', height: '40px', borderRadius: '50%', marginLeft: '10px' }}
+											/>
 										</div>
 									) : (
 										<div>
@@ -301,9 +340,9 @@ const ChatWindow = (props) => {
 												textAlign: 'left',
 												fontSize: '11px',
 											}}>
-                        <span style={{ fontSize: '13px' }}>
-                            <b>{msg.username || 'Unknown'}</b>
-                        </span> {formatDate(msg.sendTime)}
+												<span style={{ fontSize: '13px' }}>
+                           						 <b>{msg.username || 'Unknown'}</b>
+                       							 </span> {formatDate(msg.sendTime)}
 											</div>
 											<Box sx={{
 												padding: '10px',
@@ -339,6 +378,12 @@ const ChatWindow = (props) => {
 													msg.content
 												)}
 											</Box>
+											<img
+												src={getAvatarUrl(msg.username)}
+												alt={msg.username}
+												onError={(e) => (e.target.src = '/placeholder-avatar.png')} // Fallback for missing avatars
+												style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }}
+											/>
 										</div>
 									)}
 								</Box>

@@ -3,7 +3,7 @@ import {Avatar, Box, Grid, IconButton, Tab, Tabs, Tooltip, Typography} from '@mu
 import {styled} from '@mui/material/styles'
 import AddCommentIcon from '@mui/icons-material/AddComment'
 import axios from 'axios'
-import {AddAlarm, PostAddOutlined} from "@mui/icons-material";
+import {AddAlarm, AddModerator, PostAddOutlined, RemoveCircle} from "@mui/icons-material";
 
 const LOCALHOST_URL = 'http://localhost:8082'
 
@@ -92,47 +92,77 @@ const ChatSelection = (props) => {
 			.catch((e) => console.error(e))
 	}
 	function addUsersToGroupChat(e) {
-		let users = prompt('Enter the usernames of the users you want to add to the group chat, separated by commas')
+		const usernameToAdd = prompt('Enter the username of the user you want to add to the group chat:');
 
-		if(users.length === 0) {
-			alert('Pridajte aspon jedneho uzivatela')
+		// Validate input
+		if (!usernameToAdd || usernameToAdd.trim().length === 0) {
+			alert('Please enter a valid username.');
+			return;
+		}
+		const chatroomID = props.activeChat?.id;
+
+		if (!chatroomID) {
+			alert('No active chatroom selected. Please select a chatroom first.');
 			return;
 		}
 
-		users = users.split(/\s*,\s*/)
-
 		axios
-			.patch(LOCALHOST_URL + '/api/chatroom/adduser', {
-				name: name,
-				isGroup: true,
-				joinedUserNames: users,
-				createdBy: props.user.id,
+			.post(`${LOCALHOST_URL}/api/chatroom/assign/${chatroomID}`, {
+					reqUserId: props.user.id, // Current logged-in user's ID
+					userName: usernameToAdd.trim(), // User to be added
+					roomId: chatroomID, // Current active chatroom ID
 			})
-			.then((result) => fetchChatRooms(e))
-			.catch((e) => console.error(e))
+			.then((response) => {
+					console.log(`User "${usernameToAdd}" added successfully to chatroom.`);
+					alert(`User "${usernameToAdd}" was successfully added to the chatroom.`);
+					fetchChatRooms(e); // Refresh chatrooms after adding
+			})
+			.catch((error) => {
+					console.error(`Failed to add user "${usernameToAdd}":`, error);
+					alert(error.response?.data || `Failed to add user "${usernameToAdd}" to the chatroom.`);
+			});
 	}
 
-
-
 	function removeUsersFromGroupChat(e) {
-		let users = prompt('Enter the usernames of the users you want to remove from the group chat, separated by commas')
+		const usernameToRemove = prompt('Enter the username of the user you want to remove from the group chat:');
 
-		if(users.length === 0) {
-			alert('Odoberte aspon jedneho uzivatela')
+		if (!usernameToRemove || usernameToRemove.trim().length === 0) {
+			alert('Please enter a valid username.');
 			return;
 		}
 
-		users = users.split(/\s*,\s*/)
+		const chatroomID = props.activeChat?.id;
+
+		if (!chatroomID) {
+			alert('No active chatroom selected. Please select a chatroom first.');
+			return;
+		}
+
+		if (usernameToRemove === props.user.username) {
+			alert('You cannot remove yourself from the chatroom.');
+			return;
+		}
+
 
 		axios
-			.delete(LOCALHOST_URL + '/api/chatroom/removeuser', {
-				name: name,
-				isGroup: true,
-				joinedUserNames: users,
-				createdBy: props.user.id,
+			.post(`${LOCALHOST_URL}/api/chatroom/deleteUserFromChatroom/${chatroomID}`, {
+				reqUserId: props.user.id,
+				userName: usernameToRemove.trim(),
+				roomId: chatroomID,
 			})
-			.then((result) => fetchChatRooms(e))
-			.catch((e) => console.error(e))
+			.then((response) => {
+				console.log(`User "${usernameToRemove}" removed successfully from the chatroom.`);
+				alert(`User "${usernameToRemove}" was successfully removed from the chatroom.`);
+				fetchChatRooms(e); // Refresh chatrooms after removing
+			})
+			.catch((error) => {
+				if (error.response?.status === 403) {
+					alert('Users cannot be removed from public chatrooms.');
+				} else {
+					console.error(`Failed to remove user "${usernameToRemove}":`, error);
+					alert(error.response?.data || `Failed to remove user "${usernameToRemove}" from the chatroom.`);
+				}
+			});
 	}
 
 
@@ -171,15 +201,20 @@ const ChatSelection = (props) => {
 							}),
 						}}
 						>
-							<Tooltip title="Create group" placement="left" arrow>
+							<Tooltip title="Create a new chatroom" placement="left" arrow>
 								<IconButton sx={{paddingLeft: '0px'}} onClick={addGroupChat}>
+									<AddModerator sx={{color: 'white'}}></AddModerator>
+
+								</IconButton>
+							</Tooltip>
+							<Tooltip title="Add user to the chatroom" placement="left" arrow>
+								<IconButton sx={{paddingLeft: '0px'}} onClick={addUsersToGroupChat}>
 									<AddCommentIcon sx={{color: 'white'}}></AddCommentIcon>
 								</IconButton>
 							</Tooltip>
-							<Tooltip title="Add user to group chat" placement="left" arrow>
-								<IconButton sx={{paddingLeft: '0px'}} onClick={addUsersToGroupChat}>
-									<AddCommentIcon sx={{color: 'white'}}></AddCommentIcon>
-
+							<Tooltip title="Remove user from the chatroom" placement="left" arrow>
+								<IconButton sx={{paddingLeft: '0px'}} onClick={removeUsersFromGroupChat}>
+									<RemoveCircle sx={{color: 'white'}}></RemoveCircle>
 								</IconButton>
 							</Tooltip>
 						</Grid>
