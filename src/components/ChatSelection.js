@@ -45,11 +45,9 @@ const ChatSelection = (props) => {
 			}));
 			setChatRooms(chatRooms);
 
-			if (!props.activeChat) {
-				const firstChatId = chatRooms[0]?.id;
-				if (firstChatId) {
-					await props.handleChatChange(e, firstChatId);
-				}
+			// Set active chat only if none is selected
+			if (!props.activeChat && chatRooms.length > 0) {
+				await props.handleChatChange(e, chatRooms[0]?.id);
 			}
 
 			props.setPrivateChats(new Map(chatRooms.map((room) => [room.id, room.messages || []])));
@@ -213,7 +211,10 @@ const ChatSelection = (props) => {
 					</Grid>
 					<ChatTabs
 						value={props.activeChat?.id || false} // Prevent undefined errors
-						onChange={props.handleChatChange}
+						onChange={(e, newChatId) => {
+							console.log('Switching to chatRoomId:', newChatId);
+							props.handleChatChange(e, newChatId);
+						}}
 						orientation="vertical"
 					>
 						{rooms.map((room) =>

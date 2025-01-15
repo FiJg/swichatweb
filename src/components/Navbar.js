@@ -30,7 +30,11 @@ const Navbar = (props) => {
 						setAvatar(response.data.avatarUrl);
 					}
 				} catch (error) {
-					console.error('Error fetching avatar:', error);
+					if (err.response && err.response.status === 404) {
+					console.error('Error fetching avatar 404:', error);
+					} else {
+					console.error("Error fetching avatar:", error);
+					}
 				}
 			}
 		};

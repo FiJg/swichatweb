@@ -36,11 +36,11 @@ const Menu = (props) => {
 			const result = await axios.get(`${LOCALHOST_URL}/api/chatroom/${newChatId}`);
 			setActiveChat(result.data);
 
-			// Clear notifications for the active chatroom
-			setNotifications((prev) => ({
-				...prev,
-				[newChatId]: false,
-			}));
+			setNotifications((prev) => {
+				const updated = { ...prev, [newChatId]: false }; // Clear for active chat
+				console.log('Cleared notifications for chatRoomId:', newChatId, updated);
+				return updated;
+			});
 		} catch (error) {
 			console.error('Error changing chat:', error);
 		}
@@ -64,27 +64,23 @@ const Menu = (props) => {
 
 		stompClient.connect({}, () => {
 			console.log('WebSocket connected successfully.');
+
 			stompClient.subscribe(`/user/${props.user.username}/notifications`, (message) => {
 				const now = Date.now();
-				if (now - lastUpdate >= 3000){
+
 					console.log(`Notification received on /user/${props.user.username}/notifications:`, message.body);
-				const notification = JSON.parse(message.body);
+					const notification = JSON.parse(message.body);
+
+					console.log('Received notification:', notification);
+
 
 				setNotifications((prev) => {
+					const updatedState = { ...prev, [notification.chatRoomId]: true };
+					console.log('Notification state updated:', updatedState);
+					return updatedState;
+				});
 
-					if (prev[notification.chatRoomId]) {
-						console.log(`Skipping update for chatRoomId ${notification.chatRoomId}`);
-						return prev;
-						}
-						console.log(`Updating notification for chatRoomId ${notification.chatRoomId}`);
-						return {
-							...prev,
-							[notification.chatRoomId]: true, // Mark the chatroom as having new messages
-						};
-					});
-					lastUpdate = now;
 
-				}
 			});
 		});
 
@@ -158,6 +154,10 @@ const Menu = (props) => {
 				const updatedChats = new Map(privateChats);
 
 				result.data.forEach(msg => {
+					// Adding ephemeral timestamp for the currently logged in user
+					msg.retrievedFromQueueTimestamp = new Date().getTime();
+
+					// Inserting the message into the correct chat
 					if (!updatedChats.has(msg.room.id)) {
 						updatedChats.set(msg.room.id, []);
 					}
