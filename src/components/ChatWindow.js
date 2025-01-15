@@ -171,6 +171,7 @@ const ChatWindow = (props) => {
 					day: 'numeric',
 					hour: 'numeric',
 					minute: 'numeric',
+					second: 'numeric',
 				});
 			}
 		}
@@ -184,7 +185,7 @@ const ChatWindow = (props) => {
 	 * @returns {*}
 	 */
 	function formatDate(dateTime) {
-		const options = {year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric'}
+		const options = {year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}
 		return new Date(dateTime).toLocaleDateString(undefined, options)
 	}
 
@@ -324,10 +325,6 @@ const ChatWindow = (props) => {
 												{/* Timestamps */}
 												<div style={{ marginTop: '5px', fontSize: '11px', color: '#cccccc' }}>
 													<div>
-														Added to Queue:{' '}
-														{msg.addedToQueueTimestamp && formatDateToLocal(msg.addedToQueueTimestamp)}
-													</div>
-													<div>
 														Retrieved from Queue:{' '}
 														{msg.retrievedFromQueueTimestamp && formatDateToLocal(msg.retrievedFromQueueTimestamp)}
 													</div>
@@ -384,10 +381,6 @@ const ChatWindow = (props) => {
 													)}
 												{/* Timestamps */}
 												<div style={{ marginTop: '5px', fontSize: '11px', color: '#66666f' }}>
-													<div>
-														Added to Queue:{' '}
-														{msg.addedToQueueTimestamp && formatDateToLocal(msg.addedToQueueTimestamp)}
-													</div>
 													<div>
 														Retrieved from Queue:{' '}
 														{msg.retrievedFromQueueTimestamp && formatDateToLocal(msg.retrievedFromQueueTimestamp)}
