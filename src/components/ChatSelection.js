@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react'
-import {Avatar, Box, Grid, IconButton, Tab, Tabs, Tooltip, Typography} from '@mui/material'
+import {Avatar, Box, Badge, Grid, IconButton, Tab, Tabs, Tooltip, Typography} from '@mui/material'
 import {styled} from '@mui/material/styles'
 import AddCommentIcon from '@mui/icons-material/AddComment'
 import axios from 'axios'
@@ -28,45 +28,34 @@ const ChatSelection = (props) => {
 	const [rooms, setChatRooms] = useState([])
 	
 	useEffect((e) => {
-		fetchChatRooms(e)
-	}, [])
-	
+		fetchChatRooms(e);
+		console.log('Current notifications state:', props.notifications);
+	}, [props.notifications])
+
 	async function fetchChatRooms(e) {
 		const url = LOCALHOST_URL + '/chatrooms'
 		const params = new URLSearchParams([['username', props.user.username]])
+
 		try {
-			await axios.get(url, {params})
-			           .then(async (result) => {
-						   setChatRooms([]);
-						   
-				           result.data.forEach(i => setChatRooms((rooms) => [...rooms, {
-					           id: i.id,
-					           name: i.name,
-					           messages: i.messages,
-				           }]))
-				           
-				           try {
-					           await props.handleChatChange(e, result.data[0]?.id)
-				           } catch (e) {
-					           console.info('No chats available!')
-				           }
-				
-				           try {
-					           result.data.forEach(i => {
-						           let msgList = []
-						           i.messages.forEach(j => msgList.push(j))
-						
-						           props.privateChats.set(i.id, msgList)
-						           props.setPrivateChats(new Map(props.privateChats))
-					           })
-				           } catch (e) {
-					           console.error(e)
-					           console.info('No messages available!')
-				           }
-				           props.setIsLoading(false)
-			           })
-		} catch (e) {
-			console.info('Error in fetching chat rooms!')
+			const response = await axios.get(url, { params });
+			const chatRooms = response.data.map((room) => ({
+				id: room.id,
+				name: room.name,
+				messages: room.messages,
+			}));
+			setChatRooms(chatRooms);
+
+			if (!props.activeChat) {
+				const firstChatId = chatRooms[0]?.id;
+				if (firstChatId) {
+					await props.handleChatChange(e, firstChatId);
+				}
+			}
+
+			props.setPrivateChats(new Map(chatRooms.map((room) => [room.id, room.messages || []])));
+			props.setIsLoading(false);
+		} catch (error) {
+			console.error('Error fetching chat rooms:', error);
 		}
 	}
 	
@@ -173,8 +162,13 @@ const ChatSelection = (props) => {
 			) : (
 				<Box
 					sx={{
-						bgcolor: '#1b1b1d', position: 'absolute', left: '0', right: '1',
-						padding: '10px', borderRight: 1, borderColor: '#999b9d', height: 'calc(100% - 65px - 20px)',
+						bgcolor: '#1b1b1d',
+						position: 'absolute',
+						left: '0', right: '1',
+						padding: '10px',
+						borderRight: 1,
+						borderColor: '#999b9d',
+						height: 'calc(100% - 65px - 20px)',
 						...(props.isSmallRes === true && {
 							paddingRight: '0px',
 							width: '70px',
@@ -187,9 +181,7 @@ const ChatSelection = (props) => {
 					<Grid container direction="row" justifyContent="space-between" alignItems="center">
 						{!props.isSmallRes ? (
 							<Grid item>
-								<Typography variant="h5">
-									Chats
-								</Typography>
+								<Typography variant="h5">ChatRooms</Typography>
 							</Grid>
 						) : (
 							<></>
@@ -220,7 +212,7 @@ const ChatSelection = (props) => {
 						</Grid>
 					</Grid>
 					<ChatTabs
-						value={props.activeChat.id}
+						value={props.activeChat?.id || false} // Prevent undefined errors
 						onChange={props.handleChatChange}
 						orientation="vertical"
 					>
@@ -228,11 +220,19 @@ const ChatSelection = (props) => {
 							<Tab
 								key={room.id}
 								value={room.id}
-								label={!props.isSmallRes ? (
-									room.name
-								) : (
-									''
-								)}
+								label={
+									!props.isSmallRes ? (
+										<Badge
+											color="error"
+											variant={props.notifications[room.id] ? "dot" : "standard"}
+											invisible={!props.notifications[room.id]}
+										>
+											{room.name}
+										</Badge>
+									) : (
+										''
+									)
+								}
 								sx={{color: 'white', justifyContent: 'left', paddingLeft: '10px'}}
 								icon={<Avatar sx={{bgcolor: '#9c49f3', color: 'black'}}>
 									<div className="MyFont">{room.name.charAt(0).toUpperCase()}</div>

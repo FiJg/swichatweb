@@ -1,10 +1,13 @@
-import {Box, IconButton, Input} from '@mui/material'
+import {Avatar, Box, IconButton, Input} from '@mui/material'
 import {styled} from '@mui/material/styles'
 import {SendRounded} from '@mui/icons-material'
 import React, {useEffect, useRef, useState} from 'react'
 import axios from "axios";
 import activeChat from "sockjs-client/lib/transport/receiver/jsonp";
 const LOCALHOST_URL = 'http://localhost:8082'
+
+const validExtensions = ['.png', '.jpg', '.jpeg', '.gif'];
+const avatarBaseUrl = `${LOCALHOST_URL}/uploads/avatars/`;
 
 const TextInput = styled(Input)({
 	color: 'white',
@@ -31,29 +34,48 @@ const SendButton = styled(IconButton)({
 	float: 'right',
 })
 
+
+
+
 const ChatWindow = (props) => {
 	const [message, setMessage] = useState('')
 	const [file, setFile] = useState(null); // New state for file
 
 	const [failedAvatars, setFailedAvatars] = useState(new Set()); // Track failed avatar requests
+	const imgRefs = {}; // Ref object for avatar images
+	const formRef = useRef(null)
 
 
-	const getAvatarUrl = (username) => {
-		if (failedAvatars.has(username)) {
-			// Use placeholder for users whose avatars failed to load
-			return '/placeholder-avatar.png';
-		}
-		return `${LOCALHOST_URL}/uploads/avatars/${username}.png`;
-	};
+	const getAvatarUrl = (username) => `${avatarBaseUrl}${username}.png`;
 
 	const handleAvatarError = (username) => {
 		setFailedAvatars((prev) => new Set([...prev, username]));
 	};
 
+	// Render avatar or fallback to letter avatar
+	const renderAvatar = (username) => {
+		if (!failedAvatars.has(username)) {
+			if (!imgRefs[username]) {
+				imgRefs[username] = React.createRef();
+			}
 
+			return (
+				<img
+					ref={imgRefs[username]}
+					src={getAvatarUrl(username)}
+					alt={username}
+					onError={() => handleAvatarError(username)}
+					style={{ width: '40px', height: '40px', borderRadius: '50%', marginLeft: '10px' }}
+				/>
+			);
+		}
 
-	const formRef = useRef(null)
-
+		return (
+			<Avatar sx={{ bgcolor: '#9c49f3', color: 'white' }}>
+				{username.charAt(0).toUpperCase()}
+			</Avatar>
+		);
+	};
 
 	async function send(e) {
 		e.preventDefault()
@@ -232,21 +254,6 @@ const ChatWindow = (props) => {
 
 
 
-						<Box sx={{position: 'absolute', bottom: '0', right:'0', width: '10%'}}>
-							<form onSubmit={addUsersToGroupChat} ref={formRef}>
-								<div className="MessageInput">
-									<textarea id="message" rows="2" cols="2" value={props.activeChat.id} readOnly />
-									<textarea id="message" rows="2" cols="10" value={props.activeChat.name} readOnly />
-									<textarea id="message" rows="2" cols="10" value={props.user.id} readOnly />
-									<SendButton type="submit">
-										<SendRounded color="secondary"/>
-									</SendButton>
-								</div>
-							</form>
-						</Box>
-
-
-
 						<Box id={'chat'} sx={{
 							overflowY: 'auto',
 							overflowX: 'hidden',
@@ -263,6 +270,7 @@ const ChatWindow = (props) => {
 
 							{[...(props.privateChats.get(props.activeChat.id) || [])].map((msg, index) => (
 								<Box key={`${msg.id}-${index}`} sx={{ paddingBottom: '10px', width: '100%', overflow: 'auto' }}>
+									{renderAvatar(msg.username)}
 									{msg.username === props.user.username ? (
 										<div>
 											<div style={{
@@ -324,12 +332,7 @@ const ChatWindow = (props) => {
 													</div>
 												</div>
 											</Box>
-											<img
-												src={getAvatarUrl(msg.username)}
-												alt={msg.username}
-												onError={() => handleAvatarError(msg.username)} // Use the state to track failed avatars
-												style={{ width: '40px', height: '40px', borderRadius: '50%', marginLeft: '10px' }}
-											/>
+
 										</div>
 									) : (
 										<div>
@@ -378,12 +381,7 @@ const ChatWindow = (props) => {
 													msg.content
 												)}
 											</Box>
-											<img
-												src={getAvatarUrl(msg.username)}
-												alt={msg.username}
-												onError={(e) => (e.target.src = '/placeholder-avatar.png')} // Fallback for missing avatars
-												style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }}
-											/>
+
 										</div>
 									)}
 								</Box>

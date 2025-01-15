@@ -6,13 +6,22 @@ import {over} from 'stompjs'
 import SockJS from 'sockjs-client'
 import axios from 'axios'
 
-var stompClient = null
+let stompClient = null;
+
 const LOCALHOST_URL = 'http://localhost:8082'
 
+
+
+
 const Menu = (props) => {
+
+
 	const theme = useTheme()
 	const isSmallRes = useMediaQuery(theme.breakpoints.down('sm'))
-	
+
+
+	const [notifications, setNotifications] = useState({}); // Track notifications by chatroom ID
+
 	const [activeChat, setActiveChat] = useState()
 	const [privateChats, setPrivateChats] = useState(new Map())
 	const [reload, setReload] = useState(false)
@@ -20,20 +29,25 @@ const Menu = (props) => {
 	const [isLoading, setIsLoading] = useState(true)
 	
 	async function handleChatChange(e, newChatId) {
-		if (newChatId === undefined) {
-			props.unsetUserToken()
+		if (!newChatId || activeChat?.id === newChatId) {
+			return; // Avoid redundant updates or undefined chat selection
 		}
+		try {
+			const result = await axios.get(`${LOCALHOST_URL}/api/chatroom/${newChatId}`);
+			setActiveChat(result.data);
 
-		await setActiveChat(
-			await axios.get(LOCALHOST_URL + '/api/chatroom/' + newChatId)
-				.then(result => {
-					return result.data
-				})
-				.catch(error => {
-					console.error(error)
-				}),
-		)
+			// Clear notifications for the active chatroom
+			setNotifications((prev) => ({
+				...prev,
+				[newChatId]: false,
+			}));
+		} catch (error) {
+			console.error('Error changing chat:', error);
+		}
 	}
+
+
+
 
 	useLayoutEffect(() => {
 		return () => {
@@ -43,9 +57,45 @@ const Menu = (props) => {
 
 	useEffect(() => {
 		let sock = new SockJS(LOCALHOST_URL + '/ws')
+
+		let lastUpdate = Date.now();
+
 		stompClient = over(sock)
-		stompClient.connect({}, onConnected, onError)
-	}, [])
+
+		stompClient.connect({}, () => {
+			console.log('WebSocket connected successfully.');
+			stompClient.subscribe(`/user/${props.user.username}/notifications`, (message) => {
+				const now = Date.now();
+				if (now - lastUpdate >= 3000){
+					console.log(`Notification received on /user/${props.user.username}/notifications:`, message.body);
+				const notification = JSON.parse(message.body);
+
+				setNotifications((prev) => {
+
+					if (prev[notification.chatRoomId]) {
+						console.log(`Skipping update for chatRoomId ${notification.chatRoomId}`);
+						return prev;
+						}
+						console.log(`Updating notification for chatRoomId ${notification.chatRoomId}`);
+						return {
+							...prev,
+							[notification.chatRoomId]: true, // Mark the chatroom as having new messages
+						};
+					});
+					lastUpdate = now;
+
+				}
+			});
+		});
+
+		return () => {
+			if (stompClient) stompClient.disconnect();
+		};
+	}, [props.user.username]);
+
+
+
+
 
 	useEffect(() => {
 		checkReceivedMessages()
@@ -53,6 +103,7 @@ const Menu = (props) => {
 
 	useEffect(() => setReload(false), [reload])
 
+// In MainPage.js, update the handleNewMessage function
 	const handleNewMessage = (newMessage) => {
 		setPrivateChats((prevChats) => {
 			const updatedChats = new Map(prevChats);
@@ -60,8 +111,16 @@ const Menu = (props) => {
 			updatedChats.set(activeChat.id, [...chatMessages, newMessage]);
 			return updatedChats;
 		});
+
+		// If message is for a different chat room, show notification
+		if (newMessage.room.id !== activeChat.id) {
+			setNotifications(prev => ({
+				...prev,
+				[newMessage.room.id]: true
+			}));
+		}
 	};
-	
+
 	function onConnected() {
 		stompClient.subscribe('/chatroom/public', onMessageReceived)
 	}
@@ -198,6 +257,7 @@ const Menu = (props) => {
 						   handleChatChange={handleChatChange}
 						   isSmallRes={isSmallRes}
 						   user={props.user}
+						   notifications={notifications}
 						   privateChats={privateChats}
 						   setPrivateChats={setPrivateChats}
 						   isLoading={isLoading}
