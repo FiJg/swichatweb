@@ -1,39 +1,74 @@
-import {Avatar, Box, IconButton, Input} from '@mui/material'
-import {styled} from '@mui/material/styles'
-import {SendRounded} from '@mui/icons-material'
+import {Avatar, Box, IconButton, Input, Typography, styled} from '@mui/material'
+import {SendRounded, } from '@mui/icons-material'
 import {SendSharp} from "@mui/icons-material";
 import React, {useEffect, useRef, useState} from 'react'
-import axios from "axios";
 import activeChat from "sockjs-client/lib/transport/receiver/jsonp";
+
+import axios from "axios";
+
 const LOCALHOST_URL = 'http://localhost:8082'
 
 const validExtensions = ['.png', '.jpg', '.jpeg', '.gif'];
 const avatarBaseUrl = `${LOCALHOST_URL}/uploads/avatars/`;
 
 const TextInput = styled(Input)({
-	color: 'black',
-	backgroundColor: '#d2d2d2',
-	borderRadius: '10px',
-	padding: '0.5em 2em',
+	color: '#ffffff',
+	backgroundColor: '#0066ff',
+	borderRadius: '20px',
+	padding: '10px 20px',
 	width: '100%',
-	minHeight: '2em',
-	'&.MuiInput-underline:after': {
-		borderColor: 'transparent',
+	minHeight: '3em',
+	fontFamily: 'Play, sans-serif',
+	boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+	'& .MuiInput-input': {
+		padding: 0,
+		color: '#ffffff',
 	},
-	'&.MuiInput-underline:before': {
-		borderColor: 'transparent',
+	'&::before': {
+		borderBottom: 'none',
 	},
-	'&:not(.Mui-disabled):hover::before': {
-		borderColor: 'transparent',
+	'&::after': {
+		borderBottom: 'none',
+	},
+	'&:hover::before': {
+		borderBottom: 'none',
 	},
 })
 
 const SendButton = styled(IconButton)({
-	':hover': {
-		background: '#0066ff',
+	color: '#0066ff',
+	backgroundColor: '#f5f5f5',
+	borderRadius: '50%',
+	marginLeft: '10px',
+	'&:hover': {
+		backgroundColor: '#e3f2fd',
 	},
-	float: 'right',
-})
+});
+
+const MessageBubble = styled(Box)(({ isSender }) => ({
+	display: 'flex',
+	flexDirection: 'column',
+	alignItems: isSender ? 'flex-end' : 'flex-start',
+	marginBottom: '10px',
+}));
+
+const Timestamp = styled(Typography)({
+	fontSize: '0.75rem',
+	color: '#666666',
+	marginTop: '2px',
+	fontFamily: 'Play, sans-serif',
+});
+
+
+const MessageContent = styled(Box)(({ isSender }) => ({
+	backgroundColor: isSender ? '#0066ff' : '#e0e0e0', // Blue for sent, light gray for received
+	color: isSender ? '#ffffff' : '#333333', // White text for sent, dark text for received
+	borderRadius: '15px',
+	padding: '10px 15px',
+	maxWidth: '60%',
+	wordWrap: 'break-word',
+	fontFamily: 'Play, sans-serif',
+}));
 
 
 /**
@@ -215,9 +250,16 @@ const ChatWindow = (props) => {
 
 				//Main container
 				<Box sx={{
-					position: 'absolute', padding: '5px', ...(props.isSmallRes === true && {left: '80px', width: 'calc(100% - 110px)',}),
-					...(props.isSmallRes === false && {left: '20em', width: 'calc(100% - 20em)',}),
-					textAlign: 'center', height: 'calc(100% - 5em)',
+					position: 'absolute',
+					padding: '20px',
+					paddingLeft: '25px',
+					backgroundColor: '#f5f5f5',
+					...(props.isSmallRes === true && {
+						left: '80px', width: 'calc(100% - 110px)',}),
+					...(props.isSmallRes === false && {
+						left: '320px', width: 'calc(100% - 320px)',}),
+					textAlign: 'center',
+					height: 'calc(100% - 80px)',
 				}}>
 					<Box sx={{position: 'relative', height: '100%'}}>
 
@@ -262,7 +304,9 @@ const ChatWindow = (props) => {
 							height: '88% ',
 							scrollbarWidth: 'none', msOverflowStyle: 'none', '&::-webkit-scrollbar': {width: 0,},
 							scrollBehavior: 'smooth',
-							}}>
+							backgroundColor: '#f5f5f5',
+							color: '#000000',
+						}}>
 
 							{[...(props.privateChats.get(props.activeChat.id) || [])].map((msg, index) => (
 								<Box key={`${msg.id}-${index}`} sx={{ paddingBottom: '3em', width: '98%',
@@ -285,13 +329,15 @@ const ChatWindow = (props) => {
 												clear: 'both',
 												textAlign: 'left',
 												fontSize: '10px', //date on top
+												color: '#000000',
 											}}>
-											<span style={{ fontSize: '14px' }}><b>{msg.username || 'Unknown user'}</b></span>
+												<span style={{ fontSize: '14px' }}><b>{msg.username || 'Unknown user'}</b></span>
 												{' '} {formatDate(msg.sendTime)}
 											</div>
 											<Box sx={{
 												padding: '1em', float: 'right', clear: 'both', textAlign: 'left',
 												backgroundColor: '#0066ff', borderRadius: '10px', width: '100%',
+												color: 'whitesmoke'
 											}}>
 
 												{/* Check if a file is attached */}
@@ -324,7 +370,7 @@ const ChatWindow = (props) => {
 													)}
 
 												{/* Timestamps */}
-												<div style={{ marginTop: '5px', fontSize: '11px', color: '#cccccc' }}>
+												<div style={{ marginTop: '5px', fontSize: '11px', color: 'lightgray'}}>
 													<div>
 														Retrieved from Queue:{' '}
 														{msg.retrievedFromQueueTimestamp && formatDateToLocal(msg.retrievedFromQueueTimestamp)}
@@ -340,13 +386,14 @@ const ChatWindow = (props) => {
 										<div style={{ maxWidth: '66%', minWidth: '15%' }}>
 											<div style={{
 												padding: '10px', float: 'left', clear: 'both', textAlign: 'left', fontSize: '10px',
+												color: '#000000', // Black text
 											}}>
-												<span style={{ fontSize: '14px' }}><b>{msg.username || 'Unknown'}</b></span>
+												<span style={{ fontSize: '14px', color: '#000000', }}><b>{msg.username || 'Unknown'}</b></span>
 												{' '}{formatDate(msg.sendTime)}
 											</div>
 											<Box sx={{
-												padding: '10px', float: 'left', clear: 'both', textAlign: 'left', backgroundColor: '#d0d0d0',
-												color: 'black', borderRadius: '10px', Width: '100%',
+												padding: '10px', float: 'left', clear: 'both', textAlign: 'left', backgroundColor: '#d3d3d3',
+												color: '#000000', borderRadius: '10px', width: '100%',
 											}}>
 
 												{/* Check if a file is attached */}
@@ -371,9 +418,6 @@ const ChatWindow = (props) => {
 
 															</a>
 
-
-
-
 														)
 													) :
 													(
@@ -381,7 +425,7 @@ const ChatWindow = (props) => {
 														msg.content
 													)}
 												{/* Timestamps */}
-												<div style={{ marginTop: '5px', fontSize: '11px', color: '#66666f' }}>
+												<div style={{ marginTop: '5px', fontSize: '11px', color: '#000000' }}>
 													<div>
 														Retrieved from Queue:{' '}
 														{msg.retrievedFromQueueTimestamp && formatDateToLocal(msg.retrievedFromQueueTimestamp)}
