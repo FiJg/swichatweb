@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
 	AppBar,
+	Box,
 	Avatar,
 	IconButton,
 	Stack,
@@ -12,15 +13,44 @@ import {
 } from '@mui/material';
 import {styled} from '@mui/material/styles'
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import EmailIcon from '@mui/icons-material/Email';
 import axios from 'axios';
+import LogoutIcon from '@mui/icons-material/Logout';
+import ChatIcon from '@mui/icons-material/Chat';
+import { Link, useNavigate } from 'react-router-dom';
 
+const LogoutText = styled(Typography)({
+	transition: 'background 0.3s, color 0.3s',
+	':hover': {
+		background: 'transparent',
+	},
+	paddingLeft: '2px',
+	fontFamily: 'Play, sans-serif',
+	color: '#333333',
+})
+
+const LogoutIconButton = styled(IconButton)({
+	color: '#0066ff',
+	'&:hover': {
+		color: '#004bb5',
+		background: 'transparent',
+	},
+})
+
+const UploadAvatarButton = styled(IconButton)({
+	color: '#0066ff',
+	'&:hover': {
+		color: '#004bb5',
+		background: 'transparent',
+	},
+});
 
 
 const Navbar = (props) => {
 	const [avatar, setAvatar] = useState(props.user?.avatarUrl || null);
-	const [avatarPreview, setAvatarPreview] = useState(null); // Initialize avatarPreview state
+	const [avatarPreview, setAvatarPreview] = useState(null);
 
-	// Fetch the avatar URL when the component mounts or when the user changes
+	// Fetching avatar URL when component mounts or the user changes
 	useEffect(() => {
 		const fetchAvatar = async () => {
 			if (props.user?.username) {
@@ -45,8 +75,7 @@ const Navbar = (props) => {
 
 	const handleAvatarChange = async (file) => {
 		const formData = new FormData();
-		formData.append('file', file); // Append the file to the FormData
-
+		formData.append('file', file);
 
 		console.log("Username being used for avatar upload:", props.user.username);
 
@@ -58,7 +87,7 @@ const Navbar = (props) => {
 			});
 			console.log('Avatar updated:', response.data);
 			setAvatar(response.data.avatarUrl);
-			setAvatarPreview(null); // Clear preview after successful upload
+			setAvatarPreview(null);
 		} catch (error) {
 			console.error('Error updating avatar:', error);
 			alert('Failed to update avatar. Please try again.');
@@ -72,76 +101,105 @@ const Navbar = (props) => {
 
 	const handleFileChange = (e) => {
 		console.log("File selected");
-		const file = e.target.files[0]; // Extract the first selected file
+		const file = e.target.files[0]; // Extracting file
 		if (file) {
 			console.log("File:", file);
-			const fileUrl = URL.createObjectURL(file); // Generate preview URL
-			setAvatarPreview(fileUrl); // Show a preview immediately
-			handleAvatarChange(file); // Pass the file directly to handleAvatarChange
+			const fileUrl = URL.createObjectURL(file); //generating preview URL
+			setAvatarPreview(fileUrl); //shows preview
+			handleAvatarChange(file); // passimg file to handleAvatarChange
 		}
 	};
 
-const LogoutText = styled(Typography)({
-	transition: 'background 0.3s, color 0.3s',
-	':hover': {
-		background: 'transparent',
-	},
-	paddingLeft: '2px',
-})
-
-const LogoutIconButton = styled(IconButton)({
-	color: '#999b9d',
-	'&:hover': {
-		color: 'white',
-		background: 'transparent',
-	},
-})
-
-
-
-
-
-
 
 	return (
-		<AppBar position="static" sx={{background: '#18181a', borderBottom: 1, borderColor: '#999b9d'}} elevation={0}>
+		<AppBar position="static" sx={{background: '#d0d0d0', borderBottom: 1, borderColor: '#BDBDBD'}} elevation={1}>
 			<Toolbar>
+				{/* chattapp heading */}
+				<Box sx={{ display: 'flex', alignItems: 'center' }}>
+					<ChatIcon sx={{ color: '#0066ff', mr: 1 }} />
+					<Typography variant="h6" component="div" sx={{ color: '#333333', fontFamily: 'Play, sans-serif' }}>
+						ChatApp
+					</Typography>
+				</Box>
 				{props.user ? (
 					<Stack direction="row" spacing={2} marginLeft="auto" alignItems="center">
-						{/*  Username, pridat cevi */}
-
-
-
-						{/* Avatar Upload Section */}
+						{/* avatar upload  */}
 						<Tooltip title="Change Avatar">
-							<IconButton component="label" sx={{ p: 0 }}>
+							<UploadAvatarButton component="label">
 								<Avatar
-									sx={{ bgcolor: '#9c49f3', color: 'black', width: 40, height: 40 }}
-									src={avatarPreview || avatar || props.user.avatarUrl || ''}
+									sx={{ bgcolor: '#0066ff',
+										color: '#ffffff',
+										width: 40,
+										height: 40,}}
+									src={avatarPreview || avatar || ''}
 								>
-									{!avatarPreview && !avatar && !props.user.avatarUrl && (
-										<div className="MyFont">{props.user.username.charAt(0).toUpperCase()}</div>
+									{!avatarPreview && !avatar && (
+										<Typography variant="subtitle1" sx={{ fontFamily: 'Play, sans-serif' }}>
+											{props.user.username.charAt(0).toUpperCase()}
+										</Typography>
 									)}
 								</Avatar>
-								{/* Hidden file input */}
+								{/* hidden file input */}
 								<input
 									type="file"
 									accept="image/*"
 									onChange={handleFileChange}
 									style={{ display: 'none' }}
 								/>
-							</IconButton>
+							</UploadAvatarButton>
 						</Tooltip>
 
-						{/*  Log out */}
-						<LogoutIconButton color="inherit" onClick={logout}>
-							<LogoutText variant="button">
-								<div className="MyFont">Odhlásiť sa</div>
-							</LogoutText>
+						{/*  log out */}
+						<LogoutIconButton color="inherit" onClick={logout} aria-label="logout">
+							<LogoutIcon />
+							<LogoutText variant="button">Logout</LogoutText>
 						</LogoutIconButton>
 					</Stack>
 				) : (
-					<div></div>
+					<Stack direction="row" spacing={2} marginLeft="auto" alignItems="center">
+						{/* failstate, user not logged in, showing login/signup links */}
+						<Tooltip title="Log in">
+							<Link to="/login" style={{ textDecoration: 'none' }}>
+								<Button
+									variant="contained"
+									sx={{
+										backgroundColor: '#0066ff',
+										color: '#ffffff',
+										fontWeight: 'bold',
+										'&:hover': {
+											backgroundColor: '#1b89ea',
+										},
+										borderRadius: '20px',
+										textTransform: 'none',
+										fontFamily: 'Play, sans-serif',
+									}}
+								>
+									Log in
+								</Button>
+							</Link>
+						</Tooltip>
+						<Tooltip title="Sign Up">
+							<Link to="/signup" style={{ textDecoration: 'none' }}>
+								<Button
+									variant="outlined"
+									sx={{
+										borderColor: '#0066ff',
+										color: '#0066ff',
+										fontWeight: 'bold',
+										'&:hover': {
+											backgroundColor: '#e3f2fd',
+											borderColor: '#1b89ea',
+										},
+										borderRadius: '20px',
+										textTransform: 'none',
+										fontFamily: 'Play, sans-serif',
+									}}
+								>
+									Sign Up
+								</Button>
+							</Link>
+						</Tooltip>
+					</Stack>
 				)}
 			</Toolbar>
 		</AppBar>
