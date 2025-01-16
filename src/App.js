@@ -4,7 +4,7 @@ import Signup from './components/Signup'
 import {Route, Routes} from 'react-router-dom'
 import {useState} from 'react'
 import Navbar from './components/Navbar'
-import TryChat from './components/TryChat'
+
 
 function App() {
 	
@@ -40,7 +40,6 @@ function App() {
 				<Route path="/"
 				       element={<Home user={user} setUserToken={setUserToken} unsetUserToken={unsetUserToken}/>}/>
 				<Route path="/signup" element={<Signup/>}/>
-				<Route path="/trying" element={<TryChat/>}/>
 			</Routes>
 		</div>
 	)

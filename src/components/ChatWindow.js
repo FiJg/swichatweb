@@ -387,7 +387,7 @@ const ChatWindow = (props) => {
 												)}
 
 
-												{msg.fileUrl ? (
+												{msg.fileUrl && (
 														msg.fileType && msg.fileType.startsWith('image/') ? (
 															// Render image if it's an image file
 															<img
@@ -411,11 +411,6 @@ const ChatWindow = (props) => {
 																Download {msg.fileName || 'File'}
 															</a>
 														)
-													) :
-													(
-														// Render plain text content
-
-														msg.content
 													)}
 
 												{/* Timestamps */}
@@ -452,7 +447,7 @@ const ChatWindow = (props) => {
 													</Typography>
 												)}
 
-												{msg.fileUrl ? (
+												{msg.fileUrl && (
 														msg.fileType && msg.fileType.startsWith('image/') ? (
 															// Rendering image, if image
 															<img
@@ -476,12 +471,7 @@ const ChatWindow = (props) => {
 																Download {msg.fileName || 'File'}
 
 															</a>
-
 														)
-													) :
-													(
-														// Render plain text/string message
-														msg.content
 													)}
 												{/* Timestamps */}
 												<div style={{ marginTop: '5px', fontSize: '11px', color: '#000000' }}>
