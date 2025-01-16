@@ -1,5 +1,5 @@
 import {Avatar, Box, IconButton, Input, Typography, styled} from '@mui/material'
-import {SendRounded, } from '@mui/icons-material'
+import {SendRounded, AttachFile } from '@mui/icons-material'
 import {SendSharp} from "@mui/icons-material";
 import React, {useEffect, useRef, useState} from 'react'
 import activeChat from "sockjs-client/lib/transport/receiver/jsonp";
@@ -33,6 +33,10 @@ const TextInput = styled(Input)({
 	'&:hover::before': {
 		borderBottom: 'none',
 	},
+	'&::placeholder': {
+		color: '#ffffff',
+		opacity: 0.7,
+	},
 })
 
 const SendButton = styled(IconButton)({
@@ -61,8 +65,8 @@ const Timestamp = styled(Typography)({
 
 
 const MessageContent = styled(Box)(({ isSender }) => ({
-	backgroundColor: isSender ? '#0066ff' : '#e0e0e0', // Blue for sent, light gray for received
-	color: isSender ? '#ffffff' : '#333333', // White text for sent, dark text for received
+	backgroundColor: isSender ? '#0066ff' : '#e0e0e0',
+	color: isSender ? '#ffffff' : '#333333',
 	borderRadius: '15px',
 	padding: '10px 15px',
 	maxWidth: '60%',
@@ -193,36 +197,64 @@ const ChatWindow = (props) => {
 	function formatDateToLocal(timestamp) {
 		if (!timestamp) return "Not Retrieved";
 
-		// Ensure timestamp is a valid number and in milliseconds
-		if (typeof timestamp === "string" || typeof timestamp === "number") {
-			const timestampMs = typeof timestamp === "number" && timestamp < 1e12 ? timestamp * 1000 : timestamp;
-			const date = new Date(timestampMs);
+		const date = new Date(typeof timestamp === "number" && timestamp < 1e12 ? timestamp * 1000 : timestamp);
 
-			// Check if date is valid
-			if (!isNaN(date.getTime())) {
-				return date.toLocaleString(undefined, {
-					year: 'numeric',
-					month: 'numeric',
-					day: 'numeric',
-					hour: 'numeric',
-					minute: 'numeric',
-					second: 'numeric',
-					fractionalSecondDigits: 3
-				});
-			}
-		}
+		if (isNaN(date.getTime())) return "Invalid Date";
 
-		return "Invalid Date";
+		const options = {
+			year: 'numeric',
+			month: 'numeric',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric',
+			second: 'numeric',
+			fractionalSecondDigits: 3,
+			hour12: false, // Ensures 24-hour format
+		};
+
+		const formattedDate = date.toLocaleString(undefined, options);
+		const utcOffset = getUTCOffset(date);
+
+		return `${formattedDate} UTC${utcOffset}`;
 	}
-
 	/**
 	 * dateTime formatter
 	 * @param dateTime
 	 * @returns {*}
 	 */
 	function formatDate(dateTime) {
-		const options = {year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', fractionalSecondDigits: 3}
-		return new Date(dateTime).toLocaleDateString(undefined, options)
+		const date = new Date(dateTime);
+		if (isNaN(date.getTime())) return "Invalid Date";
+
+		const options = {
+			year: 'numeric',
+			month: 'numeric',
+			day: 'numeric',
+			hour: 'numeric',
+			minute: 'numeric',
+			second: 'numeric',
+			fractionalSecondDigits: 3,
+			hour12: false, // Ensures 24-hour format
+		};
+
+		const formattedDate = date.toLocaleString(undefined, options);
+		const utcOffset = getUTCOffset(date);
+
+		return `${formattedDate} UTC${utcOffset}`;
+	}
+
+	/**
+	 * Calculates the local UTC offset in ±HH:MM format.
+	 * @param {Date} date - The date object to calculate the offset for.
+	 * @returns {string} - The UTC offset as a string.
+	 */
+	function getUTCOffset(date) {
+		const offsetInMinutes = date.getTimezoneOffset();
+		const absoluteOffset = Math.abs(offsetInMinutes);
+		const sign = offsetInMinutes <= 0 ? '+' : '-';
+		const hours = String(Math.floor(absoluteOffset / 60)).padStart(2, '0');
+		const minutes = String(absoluteOffset % 60).padStart(2, '0');
+		return `${sign}${hours}:${minutes}`;
 	}
 
 	function scrollToBottom() {
@@ -231,6 +263,7 @@ const ChatWindow = (props) => {
 			chat.scrollTop = chat.scrollHeight
 		}
 	}
+
 
 
 	//scroll to bottom when messages/chat changes
@@ -263,34 +296,40 @@ const ChatWindow = (props) => {
 				}}>
 					<Box sx={{position: 'relative', height: '100%'}}>
 
-						<Box sx={{position: 'absolute', bottom: '1em', width: '50%'}}
-							//input bar
+						<Box sx={{position: 'absolute', bottom: '1em', width: '75%'}}
 						>
-
+							{/* Input bar*/}
 							<form onSubmit={send} ref={formRef}>
-								<div className="MessageInput">
-									{/* File input  */}
-									<input
-										type="file"
-										onChange={(e) => setFile(e.target.files[0])} // Update file state
-										style={{ marginBottom: '10px', display: 'block' }}
+								<div className="MessageInput" style={{ display: 'flex', alignItems: 'center' }}>
+									{/* Text input */}
+									<TextInput
+										multiline
+										placeholder="Write a message..."
+										value={message}
+										onChange={e => {
+											setMessage(e.target.value)
+										}}
+										onKeyDown={onKeyDown}
 									/>
 
+									{/* Send Button */}
 									<SendButton type="submit">
-										<SendRounded color="secondary"/>
+										<SendRounded color="secondary" />
 									</SendButton>
-									{/* Text input */}
-									<div>
-										<TextInput
-											multiline
-											placeholder="Napíšte správu..."
-											value={message}
-											onChange={e => {
-												setMessage(e.target.value)
-											}}
-											onKeyDown={onKeyDown}
+
+									{/* File Input Button with Icon */}
+									<label htmlFor="file-upload" style={{ marginLeft: '10px' }}>
+										<input
+											id="file-upload"
+											type="file"
+											accept={validExtensions.join(',')}
+											onChange={(e) => setFile(e.target.files[0])} // Update file state
+											style={{ display: 'none' }}
 										/>
-									</div>
+										<IconButton component="span" sx={{ color: '#0066ff', backgroundColor: '#f5f5f5', '&:hover': { backgroundColor: '#e3f2fd' } }}>
+											<AttachFile />
+										</IconButton>
+									</label>
 								</div>
 							</form>
 
@@ -328,7 +367,7 @@ const ChatWindow = (props) => {
 												float: 'right',
 												clear: 'both',
 												textAlign: 'left',
-												fontSize: '10px', //date on top
+												fontSize: '10px',
 												color: '#000000',
 											}}>
 												<span style={{ fontSize: '14px' }}><b>{msg.username || 'Unknown user'}</b></span>
@@ -340,7 +379,13 @@ const ChatWindow = (props) => {
 												color: 'whitesmoke'
 											}}>
 
-												{/* Check if a file is attached */}
+												{/* Rendering both text and file if present */}
+												{msg.content && (
+													<Typography variant="body1" sx={{ marginBottom: msg.fileUrl ? '10px' : '0' }}>
+														{msg.content}
+													</Typography>
+												)}
+
 
 												{msg.fileUrl ? (
 														msg.fileType && msg.fileType.startsWith('image/') ? (
@@ -348,7 +393,11 @@ const ChatWindow = (props) => {
 															<img
 																src={`${LOCALHOST_URL}/uploads/${msg.fileUrl}`}
 																alt={msg.fileName || 'Image'}
-																style={{ maxWidth: '100%', borderRadius: '10px' }}
+																style={{maxWidth: '100%',
+																	maxHeight: '60%',
+																	width: 'auto',
+																	height: 'auto',
+																	borderRadius: '10px' }}
 															/>
 														) : (
 															// Provide a download link for non-image files
@@ -386,7 +435,7 @@ const ChatWindow = (props) => {
 										<div style={{ maxWidth: '66%', minWidth: '15%' }}>
 											<div style={{
 												padding: '10px', float: 'left', clear: 'both', textAlign: 'left', fontSize: '10px',
-												color: '#000000', // Black text
+												color: '#000000',
 											}}>
 												<span style={{ fontSize: '14px', color: '#000000', }}><b>{msg.username || 'Unknown'}</b></span>
 												{' '}{formatDate(msg.sendTime)}
@@ -396,17 +445,27 @@ const ChatWindow = (props) => {
 												color: '#000000', borderRadius: '10px', width: '100%',
 											}}>
 
-												{/* Check if a file is attached */}
+												{/* Rendering both text and file if present */}
+												{msg.content && (
+													<Typography variant="body1" sx={{ marginBottom: msg.fileUrl ? '10px' : '0' }}>
+														{msg.content}
+													</Typography>
+												)}
+
 												{msg.fileUrl ? (
 														msg.fileType && msg.fileType.startsWith('image/') ? (
-															// Render image if it's an image file
+															// Rendering image, if image
 															<img
 																src={`${LOCALHOST_URL}/uploads/${msg.fileUrl}`}
 																alt={msg.fileName || 'Image'}
-																style={{ maxWidth: '100%', borderRadius: '10px' }}
+																style={{  maxWidth: '100%',
+																	maxHeight: '60%',
+																	width: 'auto',
+																	height: 'auto',
+																	borderRadius: '10px' }}
 															/>
 														) : (
-															// Provide a download link for non-image files
+															// Non image file, gives download link
 															<a
 																href={`${LOCALHOST_URL}/uploads/${msg.fileUrl}`}
 																target="_blank"
@@ -421,7 +480,7 @@ const ChatWindow = (props) => {
 														)
 													) :
 													(
-														// Render plain text content
+														// Render plain text/string message
 														msg.content
 													)}
 												{/* Timestamps */}
