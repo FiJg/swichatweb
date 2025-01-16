@@ -1,29 +1,60 @@
 import React, {useEffect, useState} from 'react'
-import {Avatar, Box, Badge, Grid, IconButton, Tab, Tabs, Tooltip, Typography} from '@mui/material'
-import {styled} from '@mui/material/styles'
+import {AppBar, Avatar, Box, Badge, Grid, IconButton, Tab, Tabs, Tooltip, Typography, styled} from '@mui/material'
 import AddCommentIcon from '@mui/icons-material/AddComment'
-import axios from 'axios'
 import {AddAlarm, AddModerator, PostAddOutlined, RemoveCircle} from "@mui/icons-material";
+
+import axios from 'axios'
 
 const LOCALHOST_URL = 'http://localhost:8082'
 
 
 const ChatTabs = styled(Tabs)({
 	'& .MuiTabs-indicator': {
-		backgroundColor: 'transparent',
+		display: 'none',
 	},
-	'& .MuiTab-root.Mui-selected': {
-		backgroundColor: '#2b253c !important',
-		color: 'white',
-		
-	},
-	'& .MuiButtonBase-root.MuiTab-root': {
+	'& .MuiTab-root': {
 		borderRadius: 10,
-		':hover': {
-			backgroundColor: '#302f32',
+		textTransform: 'none',
+		fontFamily: 'Play, sans-serif',
+		justifyContent: 'flex-start',
+		alignItems: 'center',
+		color: '#333333',
+		padding: '10px 20px',
+		minHeight: '50px',
+		'&:hover': {
+			backgroundColor: '#e3f2fd',
+			color: '#0066ff',
 		},
 	},
+	'& .MuiTab-root.Mui-selected': {
+		backgroundColor: '#0066ff',
+		color: '#ffffff',
+	},
+
 })
+
+
+const ActionIconButton = styled(IconButton)({
+	color: '#0066ff',
+	'&:hover': {
+		color: '#004bb5',
+		backgroundColor: 'transparent',
+	},
+});
+
+const InitialsTypography = styled(Typography)({
+	fontFamily: 'Play, sans-serif',
+	fontWeight: 'bold',
+});
+
+const NotificationBadge = styled(Badge)(({ theme }) => ({
+	'& .MuiBadge-badge': {
+		backgroundColor: '#ff1744',
+		color: 'white',
+		boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+	},
+}));
+
 
 const ChatSelection = (props) => {
 	const [rooms, setChatRooms] = useState([])
@@ -64,8 +95,8 @@ const ChatSelection = (props) => {
 	function addGroupChat(e) {
 		const name = prompt('Enter the name of the group chat')
 		let users = prompt('Enter the usernames of the users you want to add to the group chat, separated by commas')
-		
-		if(name.length === 0 || users.length === 0) {
+
+		if (!name || name.trim().length === 0 || !users || users.trim().length === 0) {
 			alert('Group chat name and/or users cannot be empty!')
 			return;
 		}
@@ -74,7 +105,7 @@ const ChatSelection = (props) => {
 		
 		axios
 			.post(LOCALHOST_URL + '/api/chatroom/create', {
-				name: name,
+				name: name.trim(),
 				isGroup: true,
 				joinedUserNames: users,
 				createdBy: props.user.id,
@@ -99,14 +130,14 @@ const ChatSelection = (props) => {
 
 		axios
 			.post(`${LOCALHOST_URL}/api/chatroom/assign/${chatroomID}`, {
-					reqUserId: props.user.id, // Current logged-in user's ID
+					reqUserId: props.user.id, // Current logged in user's ID
 					userName: usernameToAdd.trim(), // User to be added
-					roomId: chatroomID, // Current active chatroom ID
+					roomId: chatroomID, // Current active chatroomID
 			})
 			.then((response) => {
 					console.log(`User "${usernameToAdd}" added successfully to chatroom.`);
 					alert(`User "${usernameToAdd}" was successfully added to the chatroom.`);
-					fetchChatRooms(e); // Refresh chatrooms after adding
+					fetchChatRooms(e); // Refreshing chatrooms after adding
 			})
 			.catch((error) => {
 					console.error(`Failed to add user "${usernameToAdd}":`, error);
@@ -144,7 +175,7 @@ const ChatSelection = (props) => {
 			.then((response) => {
 				console.log(`User "${usernameToRemove}" removed successfully from the chatroom.`);
 				alert(`User "${usernameToRemove}" was successfully removed from the chatroom.`);
-				fetchChatRooms(e); // Refresh chatrooms after removing
+				fetchChatRooms(e); // Refreshing chatrooms after removing
 			})
 			.catch((error) => {
 				if (error.response?.status === 403) {
@@ -160,19 +191,25 @@ const ChatSelection = (props) => {
 	return (
 		<div>
 			{props.isLoading ? (
-				<>Loading...</>
+				<Typography variant="h6" sx={{ color: '#333333', fontFamily: 'Play, sans-serif', textAlign: 'center', mt: 4 }}>
+					Loading chatrooms...
+				</Typography>
 			) : (
 				<Box
 					sx={{
-						bgcolor: '#1b1b1d',
+						bgcolor: '#D0D0D0FF',
 						position: 'absolute',
-						left: '0', right: '1',
-						padding: '10px',
+						left: '0',
+						right: '0',
+						top: '65px',
+						bottom: 0,
+						padding: '20px',
 						borderRight: 1,
-						borderColor: '#999b9d',
-						height: 'calc(100% - 65px - 20px)',
+						borderColor: '#BDBDBD',
+						height: 'calc(100% - 65px - 40px)',
+						overflowY: 'auto',
 						...(props.isSmallRes === true && {
-							paddingRight: '0px',
+							paddingRight: '10px',
 							width: '70px',
 						}),
 						...(props.isSmallRes === false && {
@@ -180,46 +217,43 @@ const ChatSelection = (props) => {
 						}),
 					}}
 				>
-					<Grid container direction="row" justifyContent="space-between" alignItems="center">
-						{!props.isSmallRes ? (
+					<Grid container direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+						{!props.isSmallRes && (
 							<Grid item>
-								<Typography variant="h5">ChatRooms</Typography>
+								<Typography variant="h5" sx={{ color: '#333333', fontFamily: 'Play, sans-serif' }}>
+									ChatRooms
+								</Typography>
 							</Grid>
-						) : (
-							<></>
 						)}
-						<Grid item sx={{
-							...(props.isSmallRes === true && {
-								marginLeft: 'auto',
-								marginRight: 'auto',
-							}),
-						}}
-						>
+						<Grid item>
 							<Tooltip title="Create a new chatroom" placement="left" arrow>
-								<IconButton sx={{paddingLeft: '0px'}} onClick={addGroupChat}>
-									<AddModerator sx={{color: 'white'}}></AddModerator>
-
-								</IconButton>
+								<ActionIconButton onClick={addGroupChat}>
+									<AddModerator />
+								</ActionIconButton>
 							</Tooltip>
 							<Tooltip title="Add user to the chatroom" placement="left" arrow>
-								<IconButton sx={{paddingLeft: '0px'}} onClick={addUsersToGroupChat}>
-									<AddCommentIcon sx={{color: 'white'}}></AddCommentIcon>
-								</IconButton>
+								<ActionIconButton onClick={addUsersToGroupChat}>
+									<AddCommentIcon />
+								</ActionIconButton>
 							</Tooltip>
 							<Tooltip title="Remove user from the chatroom" placement="left" arrow>
-								<IconButton sx={{paddingLeft: '0px'}} onClick={removeUsersFromGroupChat}>
-									<RemoveCircle sx={{color: 'white'}}></RemoveCircle>
-								</IconButton>
+								<ActionIconButton onClick={removeUsersFromGroupChat}>
+									<RemoveCircle />
+								</ActionIconButton>
 							</Tooltip>
 						</Grid>
 					</Grid>
 					<ChatTabs
-						value={props.activeChat?.id || false} // Prevent undefined errors
+						value={props.activeChat?.id || false} // Preventing undefined errors
 						onChange={(e, newChatId) => {
 							console.log('Switching to chatRoomId:', newChatId);
 							props.handleChatChange(e, newChatId);
+							setActiveChat(rooms.find((room) => room.id === newChatId));
 						}}
 						orientation="vertical"
+						variant="scrollable"
+						scrollButtons="auto"
+						sx={{ height: 'calc(100% - 80px)', bgcolor: '#D0D0D0FF',  width: '100%' }}
 					>
 						{rooms.map((room) =>
 							<Tab
@@ -227,21 +261,32 @@ const ChatSelection = (props) => {
 								value={room.id}
 								label={
 									!props.isSmallRes ? (
-										<Badge
+										<NotificationBadge
 											color="error"
 											variant={props.notifications[room.id] ? "dot" : "standard"}
 											invisible={!props.notifications[room.id]}
 										>
 											{room.name}
-										</Badge>
+										</NotificationBadge>
 									) : (
 										''
 									)
 								}
-								sx={{color: 'white', justifyContent: 'left', paddingLeft: '10px'}}
-								icon={<Avatar sx={{bgcolor: '#9c49f3', color: 'black'}}>
-									<div className="MyFont">{room.name ? room.name.charAt(0).toUpperCase() : ''}</div>
-								</Avatar>}
+								sx={{
+									alignItems: 'center',
+									justifyContent: 'flex-start',
+									color: '#333333',
+									paddingLeft: '10px',
+									mb: 1,
+									display: 'flex'
+								}}
+								icon={
+									<Avatar sx={{ bgcolor: '#0066ff', color: '#ffffff', width: 30, height: 30 }}>
+										<InitialsTypography variant="subtitle2">
+											{room.name ? room.name.charAt(0).toUpperCase() : ''}
+										</InitialsTypography>
+									</Avatar>
+								}
 								iconPosition="start"
 							/>,
 						)}
