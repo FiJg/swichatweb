@@ -11,46 +11,49 @@ const LOGIN_TOKEN_URL = LOCALHOST_URL + '/login'
 
 const CssTextField = styled(TextField)({
     '& label.Mui-focused': {
-        color: 'white',
+        color: '#333333',
     },
     '& label': {
-        color: 'white',
+        color: '#333333',
     },
     '& .MuiInput-underline:after': {
-        borderBottomColor: 'green',
+        borderBottomColor: '#4CAF50'
     },
     '& input': {
-        color: 'white',
+        color: '#333333',
     },
     '& .MuiOutlinedInput-root': {
         '& fieldset': {
-            borderColor: 'grey',
+            borderColor: '#BDBDBD',
             borderRadius: '10px'
         },
         '&:hover fieldset': {
-            borderColor: 'white',
+            borderColor: '#BDBDBD'
         },
         '&.Mui-focused fieldset': {
-            borderColor: 'white',
+            borderColor: '#BDBDBD'
         },
     },
 })
 
 const LoginButton = styled(Button)({
-    background: '#9c49f3',
-    color: 'black',
+    background: '#0066ff',
+    color: '#FFFFFF',
     fontWeight: 'bold',
+    '&:hover': {
+        background: '#20487c',
+    },
 })
 
 const SignUpButton = styled(Button)({
-    transition: 'all .2s ease-in-out',
-    background: '#18181a',
-    color: '#b9bbbd',
-    borderRadius: '20px',
+    transition: 'all .3s ease-in-out',
+    background: '#E0E0E0',
+    color: '#333333',
+    borderRadius: '10px',
     ':hover': {
-        background: '#0e0e0f',
-        color: 'white',
-        transform: 'scale(1.1)',
+        background: '#D5D5D5',
+        color: 'black',
+        transform: 'scale(1.05)',
     },
 })
 
@@ -79,7 +82,7 @@ const Login = (props) => {
         // Volani backendu pro kontrolu jmena a hesla
 
         const loginBody = {
-            username: username,
+            username: username.trim(),
             password: password,
         }
 
@@ -97,66 +100,137 @@ const Login = (props) => {
             })
     }
 
-    {/*  prihlasnie formular */}
+    {/*  log in form */}
     return (
-        <div className="gradient-background" style={{width: '100%', height: '100vh'}}>
+        <div style={{
+            width: '100%',
+            height: '100vh',
+            backgroundColor: '#f5f5f5',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+        }}>
             <div style={{
-                width: '300px',
-                margin: 'auto',
-                marginTop: '10%',
-                padding: '20px 40px',
-                backgroundColor: '#18181A',
-                borderRadius: '15px'
+                width: '350px',
+                padding: '50px 50px',
+                backgroundColor: '#ffffff',
+                borderRadius: '15px',
+                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                transform: 'translateY(-6em)'
             }}>
-                <h2 className="MyFont">Log in</h2>
+
+                <h2 style={{
+                    color: '#333333',
+                    textAlign: 'center',
+                    marginBottom: '20px',
+                    fontFamily: 'Play, sans-serif'
+                }}>ChatApp Login</h2>
                 <form onSubmit={login}>
-                    <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', width: 1}}>
-                        <AccountCircle sx={{color: 'white', mr: 1, my: 0.5}}/>
-                        <CssTextField sx={{fontFamily: 'Play'}} label="Užívateľské meno"
-                                      onChange={e => setUsername(e.target.value)}/>
+                    {/* Username  */}
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '100%',
+                        marginBottom: '15px'
+                    }}>
+                        <AccountCircle sx={{ color: '#333333', mr: 1, my: 0.5 }} />
+                        <CssTextField
+                            label="Username"
+                            variant="outlined"
+                            onChange={e => setUsername(e.target.value)}
+                            fullWidth
+                        />
                     </Box>
+                    {/* Username Validation error */}
                     {!validUsername && loginButtonClicked ? (
-                        <Alert variant="string" severity="error"
-                               sx={{color: '#d64242', marginLeft: '15px'}}>Required</Alert>
+                        <Alert variant="filled" severity="error"
+                               sx={{
+                                   backgroundColor: '#FFCDD2',
+                                   color: '#D32F2F',
+                                   marginBottom: '15px',
+                                   borderRadius: '5px'
+                               }}>
+                            Username is required
+                        </Alert>
                     ) : (
-                        <Box sx={{marginBottom: '15px'}}></Box>
+                        <Box sx={{ marginBottom: '15px' }}></Box>
                     )}
-                    <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                        <LockOpen sx={{color: 'white', mr: 1, my: 0.5}}/>
-                        <CssTextField label="Password" type="password" onChange={e => setPassword(e.target.value)}/>
+                    {/* Password Field */}
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '100%',
+                        marginBottom: '15px'
+                    }}>
+                        <LockOpen sx={{ color: '#333333', mr: 1, my: 0.5 }} />
+                        <CssTextField
+                            label="Password"
+                            type="password"
+                            variant="outlined"
+                            onChange={e => setPassword(e.target.value)}
+                            fullWidth
+                        />
                     </Box>
+                    {/* Password Validation Error */}
                     {!validPassword && loginButtonClicked ? (
-                        <Alert variant="string" severity="error"
-                               sx={{color: '#d64242', marginLeft: '15px'}}>Required</Alert>
+                        <Alert variant="filled" severity="error"
+                               sx={{
+                                   backgroundColor: '#FFCDD2',
+                                   color: '#D32F2F',
+                                   marginBottom: '15px',
+                                   borderRadius: '5px'
+                               }}>
+                            Password is required
+                        </Alert>
                     ) : (
-                        <Box sx={{marginBottom: '15px'}}></Box>
+                        <Box sx={{ marginBottom: '15px' }}></Box>
                     )}
-                    {loginError ? (
-                        <Alert variant="string" severity="error"
-                               sx={{color: '#d64242', marginLeft: '15px', marginTop: '-15px'}}>{loginError}</Alert>
-                    ) : (
-                        <></>
+                    {/* Login Error Message */}
+                    {loginError && (
+                        <Alert variant="filled" severity="error"
+                               sx={{
+                                   backgroundColor: '#FFCDD2',
+                                   color: '#D32F2F',
+                                   marginBottom: '15px',
+                                   borderRadius: '5px'
+                               }}>
+                            {loginError}
+                        </Alert>
                     )}
-                    <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                        <LoginIcon sx={{color: 'white', mr: 1, my: 0.5}}/>
+                    {/* Login Button */}
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: '15px'
+                    }}>
+                        <LoginIcon sx={{ color: '#FFFFFF', mr: 1, my: 0.5 }} />
                         <LoginButton
                             type="submit"
                             variant="contained"
                             sx={{
                                 borderRadius: 2,
-                                width: 0.75,
+                                width: '100%',
+                                height: '40px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
                             }}
                         >
-                            <div className="MyFont">Log in</div>
+                            <span style={{ fontFamily: 'Play, sans-serif' }}>Log in</span>
                         </LoginButton>
                     </Box>
                 </form>
-                <Divider sx={{marginTop: '15px', marginBottom: '15px', borderBottomWidth: '50px'}}>
-                    <Chip label="OR" variant="plain" sx={{color: 'white'}}/>
+                {/* Divider with OR Chip */}
+                <Divider sx={{ marginTop: '15px', marginBottom: '15px' }}>
+                    <Chip label="OR" variant="outlined" sx={{ color: '#333333', borderColor: '#BDBDBD' }} />
                 </Divider>
-                <Link to="/signup" style={{textDecoration: 'none'}}>
-                    <SignUpButton>
-                        <div className="MyFont">Sign up now</div>
+                {/* Sign Up Link */}
+                <Link to="/signup" style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center' }}>
+                    <SignUpButton sx={{ width: '100%', padding: '10px 0' }}>
+                        <span style={{ fontFamily: 'Play, sans-serif' }}>Sign up now</span>
                     </SignUpButton>
                 </Link>
             </div>
