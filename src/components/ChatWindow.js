@@ -172,6 +172,7 @@ const ChatWindow = (props) => {
 					hour: 'numeric',
 					minute: 'numeric',
 					second: 'numeric',
+					fractionalSecondDigits: 3
 				});
 			}
 		}
@@ -185,7 +186,7 @@ const ChatWindow = (props) => {
 	 * @returns {*}
 	 */
 	function formatDate(dateTime) {
-		const options = {year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric'}
+		const options = {year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', fractionalSecondDigits: 3}
 		return new Date(dateTime).toLocaleDateString(undefined, options)
 	}
 

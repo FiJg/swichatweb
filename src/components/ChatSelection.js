@@ -7,6 +7,7 @@ import {AddAlarm, AddModerator, PostAddOutlined, RemoveCircle} from "@mui/icons-
 
 const LOCALHOST_URL = 'http://localhost:8082'
 
+
 const ChatTabs = styled(Tabs)({
 	'& .MuiTabs-indicator': {
 		backgroundColor: 'transparent',
@@ -26,7 +27,10 @@ const ChatTabs = styled(Tabs)({
 
 const ChatSelection = (props) => {
 	const [rooms, setChatRooms] = useState([])
-	
+
+	const [activeChat, setActiveChat] = useState(null);
+	const activeChatId = activeChat?.id;
+
 	useEffect((e) => {
 		fetchChatRooms(e);
 		console.log('Current notifications state:', props.notifications);
@@ -236,7 +240,7 @@ const ChatSelection = (props) => {
 								}
 								sx={{color: 'white', justifyContent: 'left', paddingLeft: '10px'}}
 								icon={<Avatar sx={{bgcolor: '#9c49f3', color: 'black'}}>
-									<div className="MyFont">{room.name.charAt(0).toUpperCase()}</div>
+									<div className="MyFont">{room.name ? room.name.charAt(0).toUpperCase() : ''}</div>
 								</Avatar>}
 								iconPosition="start"
 							/>,

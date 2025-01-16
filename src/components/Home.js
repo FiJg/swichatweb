@@ -1,6 +1,6 @@
 import React from 'react'
 import Login from './Login'
-import MainPage from './MainPage'
+import MainPage from './Menu'
 
 const Home = (props) => {
 	
