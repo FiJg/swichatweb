@@ -4,12 +4,27 @@ import './index.css'
 import App from './App'
 import reportWebVitals from './reportWebVitals'
 import {BrowserRouter, HashRouter} from 'react-router-dom'
+import { createTheme, ThemeProvider } from '@mui/material/styles';
+
+
+const theme = createTheme({
+	palette: {
+		primary: {
+			main: '#d2d2d2',
+		},
+		secondary: {
+			main: '#0066ff',
+		},
+	},
+});
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-	<HashRouter>
-		<App />
-	</HashRouter>
+	<ThemeProvider theme={theme}>
+		<HashRouter>
+			<App />
+		</HashRouter>
+	</ThemeProvider>
 );
 
 

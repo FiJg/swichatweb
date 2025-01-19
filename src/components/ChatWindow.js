@@ -164,7 +164,7 @@ const ChatWindow = (props) => {
 				fileType = file.type;
 			} catch (error) {
 				console.error('File upload failed:', error);
-				alert('Failed to upload the file.');
+				//alert('Failed to upload the file.');
 				return;
 			}
 		}
