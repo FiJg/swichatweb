@@ -20,6 +20,9 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import ChatIcon from '@mui/icons-material/Chat';
 import { Link, useNavigate } from 'react-router-dom';
 
+
+
+
 const LogoutText = styled(Typography)({
 	transition: 'background 0.3s, color 0.3s',
 	':hover': {
@@ -95,8 +98,10 @@ const Navbar = (props) => {
 		}
 	};
 
+	const navigate = useNavigate();
 	const logout = () => {
 		props.unsetUserToken();
+		navigate('/');
 	};
 
 
@@ -113,7 +118,9 @@ const Navbar = (props) => {
 
 
 	return (
-		<AppBar position="static" sx={{background: '#d0d0d0', borderBottom: 1, borderColor: '#BDBDBD'}} elevation={1}>
+		<AppBar position="static"
+				sx={{background: '#d0d0d0', borderBottom: 1, borderColor: '#BDBDBD'}}
+				elevation={1}>
 			<Toolbar>
 				{/* chattapp heading */}
 				<Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -122,6 +129,7 @@ const Navbar = (props) => {
 						ChatApp
 					</Typography>
 				</Box>
+
 				{props.user ? (
 					<Stack direction="row" spacing={2} marginLeft="auto" alignItems="center">
 						{/* avatar upload  */}
@@ -158,6 +166,31 @@ const Navbar = (props) => {
 					</Stack>
 				) : (
 					<Stack direction="row" spacing={2} marginLeft="auto" alignItems="center">
+
+						{/* "Visit Main Chat" Button */}
+						<Tooltip title="Visit Main Chatroom">
+							<Link to="/main-chat" style={{ textDecoration: 'none' }}>
+								<Button
+									variant="outlined"
+									sx={{
+										borderColor: '#0066ff',
+										color: '#0066ff',
+										fontWeight: 'bold',
+										'&:hover': {
+											backgroundColor: '#e3f2fd',
+											borderColor: '#1b89ea',
+										},
+										borderRadius: '20px',
+										textTransform: 'none',
+										fontFamily: 'Play, sans-serif',
+									}}
+								>
+									Visit Main Chat
+								</Button>
+							</Link>
+						</Tooltip>
+
+
 						{/* failstate, user not logged in, showing login/signup links */}
 						<Tooltip title="Log in">
 							<Link to="/login" style={{ textDecoration: 'none' }}>
@@ -179,6 +212,8 @@ const Navbar = (props) => {
 								</Button>
 							</Link>
 						</Tooltip>
+
+
 						<Tooltip title="Sign Up">
 							<Link to="/signup" style={{ textDecoration: 'none' }}>
 								<Button
@@ -204,7 +239,7 @@ const Navbar = (props) => {
 				)}
 			</Toolbar>
 		</AppBar>
-	)
-}
+	);
+};
 
 export default Navbar

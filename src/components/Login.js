@@ -5,6 +5,7 @@ import {styled} from '@mui/material/styles'
 import LoginIcon from '@mui/icons-material/Login'
 import {Link} from 'react-router-dom'
 import axios from 'axios'
+import { useNavigate } from "react-router-dom";
 
 const LOCALHOST_URL = 'http://localhost:8082'
 const LOGIN_TOKEN_URL = LOCALHOST_URL + '/login'
@@ -58,6 +59,8 @@ const SignUpButton = styled(Button)({
 })
 
 const Login = (props) => {
+    const navigate = useNavigate();
+
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
 
@@ -75,29 +78,53 @@ const Login = (props) => {
 
     function login(e) {
         e.preventDefault()
-        setLoginButtonClicked(true)
-        if (!validUsername || !validPassword) {
-            return
-        }
-        // Volani backendu pro kontrolu jmena a hesla
 
         const loginBody = {
             username: username.trim(),
             password: password,
         }
 
-        axios.post(LOGIN_TOKEN_URL, loginBody)
-            .then(response => {
-                props.setUserToken(response.data)
-            })
-            .catch(error => {
-                try {
-                    setLoginError(error.response.data)
-                } catch (e) {
-                    setLoginError('Error: nedá sa pripojit ku serveru')
+
+        if (!validUsername || !validPassword) {
+            return
+        }
+
+
+
+        setLoginButtonClicked(true);
+
+        let isMounted = true;
+
+
+        axios.post(`${LOCALHOST_URL}/login`, loginBody)
+            .then((response) => {
+                if (!isMounted) return;
+                const userToken = response.data;
+
+                // Add expiry if not present, default to 24 hours
+                if (!userToken.expiry) {
+                    const defaultExpiry = new Date();
+                    defaultExpiry.setHours(defaultExpiry.getHours() + 24);
+                    userToken.expiry = defaultExpiry.toISOString();
+                    console.log("not expired");
                 }
-                setLoginButtonClicked(false)
+
+                console.log("Final userToken object:", userToken);
+                props.setUserToken(userToken);
+                navigate("/menu");
             })
+            .catch((error) => {
+                if (!isMounted) return;
+                setLoginError("Invalid username or password.");
+                console.error("Login error:", error.response?.data || error.message);
+            })
+            .finally(() => {
+                if (!isMounted) return;
+                setLoginButtonClicked(false);
+            });
+        return () => {
+            isMounted = false;
+        };
     }
 
     {/*  log in form */}
