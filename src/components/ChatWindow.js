@@ -97,6 +97,10 @@ const ChatWindow = (props) => {
 
 	const formRef = useRef(null)
 
+	const isUserSignedIn = !!props.user;
+
+	const isMainRoom = props.activeChat?.isPublic && props.activeChat?.name === "Main Chat";
+
 
 	const getAvatarUrl = (username) => `${avatarBaseUrl}${username}.png`;
 
@@ -138,6 +142,11 @@ const ChatWindow = (props) => {
 	async function send(e) {
 		e.preventDefault()
 		console.log("Send function called!");
+
+		if (!isUserSignedIn) {
+			alert("You must be signed in to send messages.");
+			return;
+		}
 
 		if (message.trim().length === 0 && !file) {
 			alert('You cannot send an empty message unless a file is attached.');
@@ -298,7 +307,8 @@ const ChatWindow = (props) => {
 
 						<Box sx={{position: 'absolute', bottom: '1em', width: '75%'}}
 						>
-							{/* Input bar*/}
+							{/* Input bar, condtitional*/}
+							{(!isMainRoom || isUserSignedIn) ? (
 							<form onSubmit={send} ref={formRef}>
 								<div className="MessageInput" style={{ display: 'flex', alignItems: 'center' }}>
 									{/* Text input */}
@@ -332,6 +342,12 @@ const ChatWindow = (props) => {
 									</label>
 								</div>
 							</form>
+
+							) : (
+								<Typography sx={{ color: "gray", fontFamily: "Play, sans-serif" }}>
+									Sign in to send messages in this room.
+								</Typography>
+							)}
 
 						</Box>
 
