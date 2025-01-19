@@ -314,7 +314,7 @@ const ChatWindow = (props) => {
 
 									{/* Send Button */}
 									<SendButton type="submit">
-										<SendRounded color="secondary" />
+										<SendSharp  sx={{ color: '#0066ff' }} />
 									</SendButton>
 
 									{/* File Input Button with Icon */}

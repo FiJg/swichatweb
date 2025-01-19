@@ -91,7 +91,7 @@ const Navbar = (props) => {
 			setAvatarPreview(null);
 		} catch (error) {
 			console.error('Error updating avatar:', error);
-			alert('Failed to update avatar. Please try again.');
+			//alert('Failed to update avatar. Please try again.');
 		}
 	};
 

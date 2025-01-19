@@ -18,7 +18,6 @@ body {
 }
 
 
-/* moje */
 .gradient-background {
 	animation: gradient-animation 24s ease infinite;
 	background: linear-gradient(60deg, #66666f, #837b8a, rgba(165, 152, 171, 0.13));
